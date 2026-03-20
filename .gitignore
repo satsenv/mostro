@@ -20,6 +20,10 @@ bin/
 docker/config
 docker/.env
 
+# devenv
+.devenv/
+.pre-commit-config.yaml
+
 # AI
 CLAUDE.md
 # Mutation testing output
