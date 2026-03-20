@@ -11,3 +11,8 @@ inputs:
     inputs:
       nixpkgs:
         follows: nixpkgs
+  sats-dev:
+    url: github:satsenv/sats-dev?dir=src/modules
+imports:
+  - sats-dev/bitcoind.nix
+  - sats-dev/lnd.nix

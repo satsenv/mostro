@@ -117,7 +117,8 @@
         "devenv": "devenv",
         "git-hooks": "git-hooks",
         "nixpkgs": "nixpkgs",
-        "rust-overlay": "rust-overlay"
+        "rust-overlay": "rust-overlay",
+        "sats-dev": "sats-dev"
       }
     },
     "rust-overlay": {
@@ -137,6 +138,23 @@
       "original": {
         "owner": "oxalica",
         "repo": "rust-overlay",
+        "type": "github"
+      }
+    },
+    "sats-dev": {
+      "locked": {
+        "dir": "src/modules",
+        "lastModified": 1774027324,
+        "narHash": "sha256-0H2mW/jHfPyEDxru9g+Fgc/J56W8B4eV3fgBfIc1qc8=",
+        "owner": "satsenv",
+        "repo": "sats-dev",
+        "rev": "120a9ab306d49534043a0d69654ed8eae0adc73d",
+        "type": "github"
+      },
+      "original": {
+        "dir": "src/modules",
+        "owner": "satsenv",
+        "repo": "sats-dev",
         "type": "github"
       }
     }
