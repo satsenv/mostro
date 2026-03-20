@@ -7,6 +7,7 @@
 
   packages = [
     pkgs.protobuf
+    pkgs.htop
   ];
 
   pre-commit.hooks = {

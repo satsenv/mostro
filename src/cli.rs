@@ -25,7 +25,7 @@ use clap::Parser;
 #[command(arg_required_else_help(false))]
 pub struct Cli {
     /// Set folder for Mostro settings file - default is HOME/.mostro
-    #[arg(short, long)]
+    #[arg(short, long, env = "MOSTRO_SETTINGS_DIR")]
     dirsettings: Option<String>,
 }
 
@@ -81,8 +81,19 @@ mod tests {
     }
 
     #[test]
+    fn test_cli_parsing_no_args_with_env() {
+        let result = Cli::try_parse_from(["mostro"]);
+        assert!(result.is_ok());
+        let cli = result.unwrap();
+        match std::env::var("MOSTRO_SETTINGS_DIR") {
+            Ok(value) => assert_eq!(cli.dirsettings.unwrap(), value),
+            Err(_) => assert!(cli.dirsettings.is_none()),
+        };
+    }
+
+    #[test]
     fn test_cli_parsing_no_args() {
-        // Test parsing with no arguments (should succeed)
+        std::env::remove_var("MOSTRO_SETTINGS_DIR");
         let result = Cli::try_parse_from(["mostro"]);
         assert!(result.is_ok());
         let cli = result.unwrap();
