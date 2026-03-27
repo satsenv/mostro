@@ -15,4 +15,5 @@ inputs:
     url: github:satsenv/sats-dev?dir=src/modules
 imports:
   - sats-dev/bitcoind.nix
+  - sats-dev/nostr-rs-relay.nix
   - sats-dev/lnd.nix

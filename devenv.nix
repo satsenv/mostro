@@ -14,6 +14,10 @@
     restPort = 7080;
   };
 
+  services.nostr-rs-relay = {
+    enable = true;
+  };
+
   env.MOSTRO_SETTINGS_DIR = "${config.devenv.state}/mostro";
 
   enterShell = ''
