@@ -126,7 +126,7 @@ pub struct LightningSettings {
 #[derive(Debug, Deserialize, Serialize, Default, Clone)]
 pub struct NostrSettings {
     /// Nostr private key
-    pub nsec_privkey: String,
+    pub nsec_privkey_file: String,
     /// Nostr relays list
     pub relays: Vec<String>,
 }

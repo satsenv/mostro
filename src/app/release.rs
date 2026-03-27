@@ -684,8 +684,9 @@ async fn create_order_event(
             new_order,
             Some((user.total_rating, user.total_reviews, user.created_at)),
             Some(&mostro_pubkey),
+            &ctx.keys().public_key(),
         )?,
-        Err(_) => order_to_tags(new_order, Some((0.0, 0, 0)), Some(&mostro_pubkey))?,
+        Err(_) => order_to_tags(new_order, Some((0.0, 0, 0)), Some(&mostro_pubkey), &ctx.keys().public_key())?,
     };
 
     // Prepare new child order event for sending (kind 38383 for orders)

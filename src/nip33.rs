@@ -1,7 +1,7 @@
 use crate::config::constants::NOSTR_EXCHANGE_RATES_EVENT_KIND;
 use crate::config::settings::Settings;
 use crate::lightning::LnStatus;
-use crate::util::{get_expiration_timestamp_for_kind, get_keys};
+use crate::util::{get_expiration_timestamp_for_kind};
 use crate::LN_STATUS;
 use mostro_core::prelude::*;
 use nostr::event::builder::Error;
@@ -357,6 +357,7 @@ pub fn order_to_tags(
     order: &Order,
     reputation_data: Option<(f64, i64, i64)>,
     mostro_pubkey: Option<&str>,
+    default_pubkey: &nostr::PublicKey,
 ) -> Result<Option<Tags>, MostroError> {
     // Position of the tags in the list
     const RATING_TAG_INDEX: usize = 7;
@@ -368,7 +369,7 @@ pub fn order_to_tags(
     // Include the Mostro pubkey so clients can identify the instance
     let pubkey = match mostro_pubkey {
         Some(pk) => pk.to_string(),
-        None => get_keys()?.public_key().to_hex(),
+        None => default_pubkey.to_string(),
     };
     let mostro_link = create_source_tag(order, &Settings::get_nostr().relays, &pubkey)?;
 
@@ -663,7 +664,8 @@ mod tests {
         init_test_settings();
         let order = make_pending_order();
 
-        let tags = order_to_tags(&order, None, Some(TEST_MOSTRO_PUBKEY))
+        let default_nostr_pub_key = nostr::Keys::parse("nsec13as48eum93hkg7plv526r9gjpa0uc52zysqm93pmnkca9e69x6tsdjmdxd").unwrap().public_key();
+        let tags = order_to_tags(&order, None, Some(TEST_MOSTRO_PUBKEY), &default_nostr_pub_key)
             .expect("order_to_tags must not error")
             .expect("pending order must produce Some(tags)");
 
@@ -677,7 +679,8 @@ mod tests {
         init_test_settings();
         let order = make_pending_order();
 
-        let tags = order_to_tags(&order, None, Some(TEST_MOSTRO_PUBKEY))
+        let default_nostr_pub_key = nostr::Keys::parse("nsec13as48eum93hkg7plv526r9gjpa0uc52zysqm93pmnkca9e69x6tsdjmdxd").unwrap().public_key();
+        let tags = order_to_tags(&order, None, Some(TEST_MOSTRO_PUBKEY), &default_nostr_pub_key)
             .expect("order_to_tags must not error")
             .expect("pending order must produce Some(tags)");
 
@@ -709,7 +712,8 @@ mod tests {
         init_test_settings();
         let order = make_pending_order();
 
-        let tags = order_to_tags(&order, None, Some(TEST_MOSTRO_PUBKEY))
+        let default_nostr_pub_key = nostr::Keys::parse("nsec13as48eum93hkg7plv526r9gjpa0uc52zysqm93pmnkca9e69x6tsdjmdxd").unwrap().public_key();
+        let tags = order_to_tags(&order, None, Some(TEST_MOSTRO_PUBKEY), &default_nostr_pub_key)
             .expect("order_to_tags must not error")
             .expect("pending order must produce Some(tags)");
 

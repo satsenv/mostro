@@ -26,6 +26,8 @@ use sqlx::SqlitePool;
 use sqlx_crud::Crud;
 use std::collections::HashMap;
 use std::fmt::Write;
+use std::path::Path;
+use std::path::PathBuf;
 use std::str::FromStr;
 use std::thread;
 use tokio::sync::mpsc::channel;
@@ -237,7 +239,7 @@ pub fn get_expiration_date(expire: Option<i64>) -> i64 {
 /// # Examples
 ///
 /// ```
-/// // Get expiration for a dispute event (kind 38386)  
+/// // Get expiration for a dispute event (kind 38386)
 /// let dispute_expiration = get_expiration_timestamp_for_kind(38386);
 /// ```
 pub fn get_expiration_timestamp_for_kind(kind: u16) -> Option<i64> {
@@ -306,12 +308,13 @@ pub async fn get_tags_for_new_order(
                 new_order_db,
                 Some((user.total_rating, user.total_reviews, user.created_at)),
                 Some(&mostro_pubkey),
+                &get_keys().await?.public_key(),
             )
         }
         Err(_) => {
             // We transform the order fields to tags to use in the event
             if identity_pubkey == trade_pubkey {
-                order_to_tags(new_order_db, Some((0.0, 0, 0)), Some(&mostro_pubkey))
+                order_to_tags(new_order_db, Some((0.0, 0, 0)), Some(&mostro_pubkey), &get_keys().await?.public_key())
             } else {
                 Err(MostroInternalErr(ServiceError::InvalidPubkey))
             }
@@ -570,7 +573,7 @@ pub async fn publish_dev_fee_audit_event(
         None => "unknown".to_string(),
     };
     // Get Mostro keys for signing
-    let keys = get_keys()?;
+    let keys = get_keys().await?;
 
     // Get Nostr client
     let client = get_nostr_client()?;
@@ -634,13 +637,31 @@ pub async fn publish_dev_fee_audit_event(
     Ok(())
 }
 
-pub fn get_keys() -> Result<Keys, MostroError> {
+async fn load_nostr_private_key(
+    path: impl AsRef<Path> + Into<PathBuf>,
+) -> Result<String, MostroError> {
+    let path = path.into();
+    let private_key = tokio::fs::read(&path).await.map_err(|e| {
+        tracing::error!("Failed to parse nostr private key: {}, path: {}", e, path.display());
+        MostroInternalErr(ServiceError::NostrError(format!(
+            "Failed to read Nostr private key file: {}",
+            path.display(),
+        )))
+    });
+    Ok(String::from_utf8(private_key?)
+        .unwrap()
+        .trim()
+        .to_string())
+}
+
+pub async fn get_keys() -> Result<Keys, MostroError> {
     let nostr_settings = Settings::get_nostr();
+    let nsec_privkey = load_nostr_private_key(&nostr_settings.nsec_privkey_file).await?;
     // nostr private key
-    match Keys::parse(&nostr_settings.nsec_privkey) {
+    match Keys::parse(&nsec_privkey) {
         Ok(my_keys) => Ok(my_keys),
         Err(e) => {
-            tracing::error!("Failed to parse nostr private key: {}", e);
+            tracing::error!("Failed to parse nostr private key: {} {}", e, nsec_privkey);
             Err(MostroInternalErr(ServiceError::NostrError(e.to_string())))
         }
     }
@@ -732,7 +753,7 @@ pub async fn update_order_event(
 
     // We transform the order fields to tags to use in the event
     let mostro_pubkey = keys.public_key().to_hex();
-    if let Some(tags) = order_to_tags(&order_updated, reputation_data, Some(&mostro_pubkey))? {
+    if let Some(tags) = order_to_tags(&order_updated, reputation_data, Some(&mostro_pubkey), &get_keys().await?.public_key())? {
         // nip33 kind with order id as identifier and order fields as tags (kind 38383 for orders)
         let event = new_order_event(keys, "", order.id.to_string(), tags)
             .map_err(|e| MostroInternalErr(ServiceError::NostrError(e.to_string())))?;
@@ -896,7 +917,7 @@ pub async fn invoice_subscribe(hash: Vec<u8>, request_id: Option<u64>) -> Result
                 let hash = bytes_to_string(msg.hash.as_ref());
                 // If this invoice was paid by the seller
                 if msg.state == InvoiceState::Accepted {
-                    let keys = match get_keys() {
+                    let keys = match get_keys().await {
                         Ok(k) => k,
                         Err(e) => {
                             info!("Failed to get keys: {e}");
